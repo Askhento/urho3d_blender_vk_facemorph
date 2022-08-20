@@ -250,7 +250,11 @@ class BinaryFileWriter:
         # Non ASCII to '_'
         v = re.sub(r'[^\x00-\x7f]', '_', v)
         self.buffer.extend(bytes(v, "ascii", errors="ignore"))
-
+        
+    # Writes an UTF-8 string without terminator _ test
+    def writeUTF8Str(self, v):
+        self.buffer.extend(bytes(v, "UTF-8", errors="ignore"))
+        
     # Writes a 32 bits unsigned int
     def writeUInt(self, v):
         self.buffer.extend(struct.pack("<I", v))

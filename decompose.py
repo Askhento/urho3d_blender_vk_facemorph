@@ -47,7 +47,8 @@ import heapq
 import logging
 import re
 from bpy_extras import io_utils, node_shader_utils
-from math import floor, cos, sin, pi
+from math import  cos, sin, pi
+import json
 log = logging.getLogger("ExportLogger")
 
 #------------------
@@ -1837,7 +1838,7 @@ def DecomposeMesh(scene, meshObj, tData, tOptions, errorsMem):
         elif uvLayer.name.endswith("_UV2"):
             orig_uv2 = uvLayer.data
     # If still we don't have UV1, try the current UV map selected
-    if not orig_uv and meshData.uv_layers.active:
+    if not orig_uv and not orig_uv2 and meshData.uv_layers.active:
         orig_uv = meshData.uv_layers.active.data
         
     # create uvs automatically just in case  on the original mesh
@@ -2454,6 +2455,63 @@ def DecomposeMesh(scene, meshObj, tData, tOptions, errorsMem):
     return
 
 #--------------------
+# update MASK JSON
+#--------------------
+
+def VkUpdateJSON(obj, tOptions):
+
+    mask_file = f"{tOptions.outputPath}/mask.json"
+    model_relative_path = f"Models/{obj.name}.mdl"
+    
+    if (not os.path.exists(mask_file)):
+        return
+    
+    with open(mask_file, "r") as read_file:
+        data = json.load(read_file)
+
+    if ("effects" not in data):
+        return 
+    effects = data["effects"] 
+    
+    if (len(obj.data.shape_keys.key_blocks) < 2):
+        return
+    
+    keyBlocks = obj.data.shape_keys.key_blocks[1:]
+    keysSet = set()
+    
+    for block in keyBlocks: 
+        key = block.name
+        keysSet.add(key)
+    
+    
+    for effect in effects:
+        if ("name" not in effect or (effect["name"] != "facemorph") or "model" not in effect or (effect["model"] != model_relative_path)):
+            continue
+        
+        if ("keys" not in effect) :
+            effect["keys"] = []        
+        keysArray = effect["keys"]  
+        
+        # print(keysSet)
+        for i in range(len(keysArray) - 1, -1, -1):
+            keyObj = keysArray[i]
+            # print(keyObj)
+            if ("name" not in keyObj or keyObj["name"] not in keysSet):
+                # print(f"removing from json {keyObj}")
+                del keysArray[i]
+            else :
+                # print(f"removing form set  {keyObj['name']}")
+                keysSet.remove(keyObj["name"])
+
+        for key in keysSet:
+            # print(f"adding {key}")
+            keysArray.append({"name" : key, "weight" : 1.0})
+    
+    # temp_file = f"{tOptions.outputPath}/mask_temp.json"
+    with open(mask_file, "w", encoding="utf8") as write_file:
+        json.dump(data, write_file, indent=2, ensure_ascii=False)
+
+#--------------------
 # Scan objects
 #--------------------
 
@@ -2618,7 +2676,9 @@ def Scan(context, tDataList, errorsMem, tOptions):
             savedValue = SetRestPosePosition(context, armatureObj)
             DecomposeMesh(scene, obj, tData, tOptions, errorsMem)
             RestorePosePosition(armatureObj, savedValue)
-
+    
+    if (tOptions.vkFace and tOptions.vkUpdateJSON):        
+        VkUpdateJSON(obj, tOptions)
 #-----------------------------------------------------------------------------
 
 if __name__ == "__main__":

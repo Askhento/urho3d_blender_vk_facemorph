@@ -257,15 +257,15 @@ class UrhoExportSettings(bpy.types.PropertyGroup):
         if self.selectErrors:
             self.merge = False
         
-        self.default_vkface(context)
+        self.default_vkface()
         
         self.updatingProperties = False
         
-    def default_vkface(self, context):
+    def default_vkface(self):
         # start VKFACE here
         if self.vkFace:
             self.fileOverwrite = True
-            self.useSubDirs = False
+            self.useSubDirs = True
             
             self.optimizeIndices = False
             
@@ -570,6 +570,12 @@ class UrhoExportSettings(bpy.types.PropertyGroup):
             description = "Use for VK face distortion effect model",
             default = True,
             update = update_func)
+    
+    vkUpdateJSON: BoolProperty(
+        name = "Update mask.json",
+        description = "Used with VK face to update keys in mask.json",
+        default = False,
+        update = update_func)
     
     modifiers: BoolProperty(
             name = "Apply modifiers",
@@ -1061,7 +1067,11 @@ class UrhoExportRenderPanel(bpy.types.Panel):
         box.prop(settings, "scale")
         
         box.prop(settings, "vkFace")
-        
+
+        column = box.column()
+        column.enabled = settings.vkFace
+        column.prop(settings, "vkUpdateJSON")
+
         box.prop(settings, "modifiers")
 
         row = box.row()
@@ -1379,6 +1389,7 @@ def selectErrors(context, errorsMem, errorName):
 def ExecuteUrhoExport(context):
     global logList
 
+    
     # Check Blender version
     if bpy.app.version < (2, 83, 0):
         log.error( "Blender version 2.83 or later is required" )
@@ -1389,6 +1400,8 @@ def ExecuteUrhoExport(context):
     
     # Get exporter UI settings
     settings = context.scene.urho_exportsettings
+    settings.default_vkface()
+
 
     # File utils options
     fOptions = FOptions()
@@ -1414,7 +1427,9 @@ def ExecuteUrhoExport(context):
     tOptions.onlySelected = (settings.source == 'ONLY_SELECTED')
     tOptions.scale = settings.scale
     tOptions.globalOrigin = (settings.origin == 'GLOBAL')
+    tOptions.outputPath = settings.outputPath
     tOptions.vkFace = settings.vkFace
+    tOptions.vkUpdateJSON = settings.vkUpdateJSON
     tOptions.applyModifiers = settings.modifiers
     tOptions.doBones = settings.skeletons
     tOptions.doOnlyKeyedBones = settings.onlyKeyedBones

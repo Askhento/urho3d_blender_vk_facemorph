@@ -497,7 +497,7 @@ def UrhoWriteModel(model, filename):
         return
 
     # File Identifier
-    fw.writeAsciiStr("UMDL")
+    fw.writeUTF8Str("UMDL")
     
     # Number of vertex buffers
     fw.writeUInt(len(model.vertexBuffers))
@@ -590,7 +590,7 @@ def UrhoWriteModel(model, filename):
     # For each morph
     for morph in model.morphs:
         # Name of morph
-        fw.writeAsciiStr(morph.name)
+        fw.writeUTF8Str(morph.name)
         fw.writeUByte(0)
         # Number of affected vertex buffers
         fw.writeUInt(len(morph.vertexBufferMap))
