@@ -2459,14 +2459,17 @@ def DecomposeMesh(scene, meshObj, tData, tOptions, errorsMem):
 #--------------------
 
 def VkUpdateJSON(obj, tOptions):
-
-    mask_file = f"{tOptions.outputPath}/mask.json"
+    log.info(f"Updating mask.json file for {obj.name}")
+    mask_file = f"{tOptions.outputPath}mask.json"
+    mask_file_abs_path = bpy.path.abspath(mask_file)
     model_relative_path = f"Models/{obj.name}.mdl"
-    
-    if (not os.path.exists(mask_file)):
+
+    print(mask_file_abs_path)
+    if (not os.path.exists(mask_file_abs_path)):
+        log.warning(f"Updating mask.json file for {obj.name} failed, file not found")
         return
     
-    with open(mask_file, "r") as read_file:
+    with open(mask_file_abs_path, "r") as read_file:
         data = json.load(read_file)
 
     if ("effects" not in data):
@@ -2508,8 +2511,11 @@ def VkUpdateJSON(obj, tOptions):
             keysArray.append({"name" : key, "weight" : 1.0})
     
     # temp_file = f"{tOptions.outputPath}/mask_temp.json"
-    with open(mask_file, "w", encoding="utf8") as write_file:
+    with open(mask_file_abs_path, "w", encoding="utf8") as write_file:
         json.dump(data, write_file, indent=2, ensure_ascii=False)
+    
+        
+    
 
 #--------------------
 # Scan objects
