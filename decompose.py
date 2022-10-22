@@ -2065,8 +2065,9 @@ def DecomposeMesh(scene, meshObj, tData, tOptions, errorsMem):
         tempList = []
 
         assert len(tri.vertices) == 3
-        #  !!!
-        # assert (len(tri.loops) ) == 3
+        #  !!! don't know why need this 
+        if (not tOptions.vkFace):
+            assert (len(tri.loops) ) == 3
 
         for i, vertexIndex in enumerate(tri.vertices):
             # i: vertex index in the face (0->1->2)
@@ -2212,18 +2213,24 @@ def DecomposeMesh(scene, meshObj, tData, tOptions, errorsMem):
                 verticesMapList.append(tVertexIndex)
                     
 
+            if (tOptions.vkFace) :
+                # this is to keep order of vertices which is important for facemorph
+                # the only way I came up with is to add verticesMyMap, then in export_urho is used
+                tempList.append(vertexIndex) # ! cchanged tVertexIndex
 
-            # Add the vertex index to the temp list to create triangles later
-            
-            # Map Blender triangle index and Blender vertex index to our TVertex index (this is used later by Morphs)
-            faceVertexMap[(tri.index, vertexIndex)] = vertexIndex #!!! tVertexIndex
-            
+                faceVertexMap[(tri.index, vertexIndex)] = vertexIndex #!!! tVertexIndex
+
+                verticesMyMap[vertexIndex] = tVertex
+
+            else :
+                # Add the vertex index to the temp list to create triangles later
+                tempList.append(tVertexIndex)
+
+                # Map Blender triangle index and Blender vertex index to our TVertex index (this is used later by Morphs)
+                faceVertexMap[(tri.index, vertexIndex)] = tVertexIndex
+
             # Save every unique vertex this LOD is using
             indexSet.add(tVertexIndex)
-            
-            tempList.append(vertexIndex) # ! cchanged tVertexIndex
-
-            verticesMyMap[vertexIndex] = tVertex
             # print(f't_v_ind : {tVertexIndex}')
             
             # if tVertexIndex == 0 or tVertexIndex == len(mesh.vertices) - 1:
@@ -2269,7 +2276,7 @@ def DecomposeMesh(scene, meshObj, tData, tOptions, errorsMem):
                     .format(len(lodLevel.indexSet), meshObj.name, geometryIndex) )
             lodLevels.append(lodLevel)
         
-            GenerateTangents(lodLevels, verticesList, errorsMem)
+        GenerateTangents(lodLevels, verticesList, errorsMem)
             
     # Optimize vertex index buffer for the last LOD of every geometry with new vertices
     if tOptions.doOptimizeIndices:
@@ -2281,13 +2288,6 @@ def DecomposeMesh(scene, meshObj, tData, tOptions, errorsMem):
                     .format(len(lodLevel.indexSet), meshObj.name, geometryIndex) )
             OptimizeIndices(lodLevel)
             
-    # # Restore shape keys
-    # for j, oldValue in enumerate(shapeKeysOldValues):
-    #     objShapeKeys.key_blocks[j].value = oldValue
-
-    # # Delete the mesh
-    # meshObj.to_mesh_clear()
-    # return
 
     # Check if we need and can work on shape keys (morphs)
     keyBlocks = []

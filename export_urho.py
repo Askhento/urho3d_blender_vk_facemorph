@@ -908,9 +908,12 @@ def UrhoExport(tData, uExportOptions, uExportData, errorsMem):
             #     print(f'data_v_ind : {vert.blenderIndex}')
                 
             # Add vertices to the vertex buffer
-            for tVertexIndex in   tLodLevel.vertexIndices: # tLodLevel.indexSet:
-                # !!!tVertex = tData.verticesList[tVertexIndex],
-                tVertex = tData.verticesMyMap[tVertexIndex]
+            for tVertexIndex in (tLodLevel.vertexIndices if uExportOptions.vkFace else tLodLevel.indexSet): # :
+                if (uExportOptions.vkFace) :
+                    # !!!
+                    tVertex = tData.verticesMyMap[tVertexIndex]
+                else:
+                    tVertex = tData.verticesList[tVertexIndex]
                 
                 # if tVertexIndex == 0 or tVertexIndex == len(tLodLevel.indexSet) - 1:
                 #     print(f'e_v_ind : {tVertexIndex}, co : {tVertex.pos}')
